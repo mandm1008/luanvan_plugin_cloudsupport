@@ -22,22 +22,13 @@ class restore_course extends external_api {
     public static function execute_parameters() {
         return new external_function_parameters([
             'filename' => new external_value(PARAM_FILE, 'Tên file .mbz đã upload vào File API'),
-            'courseid' => new external_value(PARAM_INT, 'ID của khóa học sẽ restore vào'),
+            'courseid' => new external_value(PARAM_INT, 'ID của khóa học sẽ restore vào (0 nếu tạo mới)'),
         ]);
     }
 
     public static function execute($filename, $courseid) {
         global $CFG, $DB, $USER;
 
-        // Kiểm tra khóa học
-        if (!$DB->record_exists('course', ['id' => $courseid])) {
-            throw new moodle_exception('Invalid course ID.');
-        }
-
-        $context = context_course::instance($courseid);
-        require_capability('moodle/restore:restorecourse', $context);
-
-        // Tìm file từ File API (GCS / filedir)
         $fs = get_file_storage();
         $syscontext = context_system::instance();
 
@@ -58,69 +49,17 @@ class restore_course extends external_api {
             throw new moodle_exception('Invalid file format. Must be .mbz');
         }
 
-        // Lưu file tạm để restore_controller có thể xử lý
-        $tempdir = make_request_directory(); // tạo thư mục tạm trong dataroot/temp
-        $temppath = $tempdir . '/' . $filename;
-        $storedfile->copy_content_to($temppath);
+        $restorecontext = context_system::instance();
+        require_capability('moodle/restore:restorecourse', $restorecontext);
 
-        if (!file_exists($temppath)) {
-            throw new moodle_exception('Failed to copy file to temp directory.');
-        }
-
-        // Tạo restore controller
-        $controller = new \restore_controller(
-            $temppath,
-            $courseid,
-            \backup::INTERACTIVE_NO,
-            \backup::MODE_GENERAL,
-            $USER->id,
-            \backup::TARGET_EXISTING_DELETING
-        );
-
-        if (!$controller) {
-            throw new moodle_exception('Failed to create restore controller.');
-        }
-
-        // Convert nếu cần
-        if ($controller->get_status() === \backup::STATUS_REQUIRE_CONV) {
-            $controller->convert();
-        }
-
-        if ($controller->get_status() === \backup::STATUS_SETTING_UI) {
-            $controller->finish_ui();
-        }
-
-        // Lấy và build plan
-        $plan = $controller->get_plan();
-        if (!$plan) {
-            throw new moodle_exception('Restore plan is not available.');
-        }
-        $plan->build();
-
-        // Precheck
-        $precheck = $controller->execute_precheck();
-        if ($precheck !== true) {
-            $errors = '';
-            foreach ($precheck as $error) {
-                $errors .= $error . "\n";
-            }
-            throw new moodle_exception('Precheck failed: ' . $errors);
-        }
-
-        // Thực hiện restore
-        $controller->execute_plan();
-
-        if ($controller->get_status() !== \backup::STATUS_COMPLETED) {
-            throw new moodle_exception('Restore failed.');
-        }
-
-        $restoredcourseid = $controller->get_courseid();
-        $controller->destroy();
+        $script = $CFG->dirroot . '/local/cloudsupport/cli/restore_runner.php';
+        $cmd = "php $script --filename=" . escapeshellarg($filename) . " --courseid=$courseid > /proc/1/fd/1 2>&1 &";
+        exec($cmd);
 
         return [
             'status' => 'success',
-            'message' => 'Course restored successfully.',
-            'courseid' => $restoredcourseid,
+            'message' => 'Restore is running in background by ' . $cmd,
+            'courseid' => $courseid,
         ];
     }
 

@@ -29,13 +29,14 @@ class upload_backup_file extends external_api {
             'filecontent' => $filecontent,
         ]);
 
-        // Kiểm tra định dạng .mbz
-        if (pathinfo($params['filename'], PATHINFO_EXTENSION) !== 'mbz') {
-            throw new moodle_exception('Invalid file format. Expected .mbz');
-        }
+        // // Kiểm tra định dạng .mbz
+        // if (pathinfo($params['filename'], PATHINFO_EXTENSION) !== 'mbz') {
+        //     throw new moodle_exception('Invalid file format. Expected .mbz');
+        // }
 
         $context = context_system::instance();
-        self::validate_context($context);
+        // require_capability('moodle/restore:uploadfile', $context);
+        // self::validate_context($context);
 
         $decoded = base64_decode($params['filecontent'], true);
         if ($decoded === false) {

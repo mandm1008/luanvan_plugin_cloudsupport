@@ -47,7 +47,7 @@ $functions = [
         'description' => 'Upload a backup .mbz file to temp backup folder.',
         'type'        => 'write',
         'ajax'        => true,
-        'capabilities'=> '',
+        'capabilities'=> 'moodle/restore:uploadfile',
     ],
 ];
 $services = [
@@ -56,6 +56,7 @@ $services = [
             'local_cloudsupport_restore_course', 
             'local_cloudsupport_export_course', 
             'local_cloudsupport_export_users',
+            'local_cloudsupport_import_users',
             'local_cloudsupport_upload_backup_file'
         ],
         'restrictedusers' => 0,
