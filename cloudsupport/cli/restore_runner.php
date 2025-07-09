@@ -19,11 +19,13 @@ $help = <<<EOD
 Restore a Moodle course from a .mbz backup file stored in File API.
 
 Usage:
-  php restore_runner.php --filename=FILENAME --courseid=ID
+  php restore_runner.php --filename=FILENAME --courseid=ID [--webhook-api=URL] [--token=TOKEN]
 
 Options:
   --filename=FILENAME     The .mbz file uploaded to File API
   --courseid=ID           The course ID to restore into (0 = create new)
+  --webhook-api=URL       Optional: Webhook URL to notify after restore
+  --token=TOKEN           Optional: Token to include in webhook payload
   -h, --help              Show this help
 
 EOD;
@@ -33,6 +35,8 @@ list($options, $unrecognized) = cli_get_params([
     'help' => false,
     'filename' => null,
     'courseid' => null,
+    'webhook-api' => null,
+    'token' => null,
 ], [
     'h' => 'help'
 ]);
@@ -54,11 +58,28 @@ if (empty($options['filename']) || !isset($options['courseid'])) {
     cli_error("Missing required parameters: --filename and --courseid\n\n$help", 2);
 }
 
-// Assign CLI args
 $filename = $options['filename'];
 $courseid = (int)$options['courseid'];
+$webhookApi = $options['webhook-api'] ?? null;
+$token = $options['token'] ?? null;
 
-cli_writeln("🔁 Starting restore: filename=\"$filename\", courseid=$courseid");
+// Hàm gửi webhook
+function send_webhook($url, $data) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+    $response = curl_exec($ch);
+    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    cli_writeln("📡 Webhook sent to $url, HTTP $httpcode");
+    cli_writeln("🔁 Response: $response");
+}
+
+cli_writeln("🔁 Starting restore: filename=\"$filename\", courseid=$courseid, webhookapi=$webhookApi");
 
 // Lấy file từ File API
 $fs = get_file_storage();
@@ -117,11 +138,11 @@ if (!$controller) {
 }
 
 // Giai đoạn chuẩn bị
-if ($controller->get_status() === \backup::STATUS_REQUIRE_CONV) {
+if ($controller->get_status() === \restore_controller::STATUS_REQUIRE_CONV) {
     $controller->convert();
 }
 
-if ($controller->get_status() === \backup::STATUS_SETTING_UI) {
+if ($controller->get_status() === \restore_controller::STATUS_SETTING_UI) {
     $controller->finish_ui();
 }
 
@@ -132,17 +153,60 @@ if ($precheck !== true) {
     foreach ($precheck as $error) {
         cli_writeln("  - $error");
     }
+
+    // Gửi webhook nếu có
+    if (!empty($webhookApi)) {
+        $payload = [
+            'eventname' => '\\local_cloudsupport\\event\\restore_finished',
+            'other' => [
+                'courseid' => $restorecourseid,
+                'token' => $token,
+                'status' => 'failed',
+                'error' => implode("; ", $precheck),
+            ],
+            'host' => parse_url($CFG->wwwroot, PHP_URL_HOST),
+        ];
+        send_webhook($webhookApi, $payload);
+    }
+
     exit(1);
 }
 
 // Restore
 $controller->execute_plan();
+$restoredid = $controller->get_courseid();
 
-if ($controller->get_status() === \backup::STATUS_COMPLETED) {
-    $restoredid = $controller->get_courseid();
+if ($restoredid && $restoredid > 0) {
     cli_writeln("✅ Course restored successfully. ID = $restoredid");
+
+    if (!empty($webhookApi)) {
+        $payload = [
+            'eventname' => '\\local_cloudsupport\\event\\restore_finished',
+            'other' => [
+                'courseid' => $restoredid,
+                'token' => $token,
+                'status' => 'success',
+            ],
+            'host' => parse_url($CFG->wwwroot, PHP_URL_HOST),
+        ];
+        send_webhook($webhookApi, $payload);
+    }
 } else {
     cli_writeln("❌ Restore failed.");
+
+    if (!empty($webhookApi)) {
+        $payload = [
+            'eventname' => '\\local_cloudsupport\\event\\restore_finished',
+            'other' => [
+                'courseid' => $restoredid,
+                'token' => $token,
+                'status' => 'failed',
+                'error' => 'Restore did not complete successfully',
+            ],
+            'host' => parse_url($CFG->wwwroot, PHP_URL_HOST),
+        ];
+        send_webhook($webhookApi, $payload);
+    }
 }
 
 $controller->destroy();
