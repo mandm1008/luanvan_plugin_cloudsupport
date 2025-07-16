@@ -59,7 +59,7 @@ class restore_course extends external_api {
 
         // ✅ Tạo lệnh CLI
         $script = $CFG->dirroot . '/local/cloudsupport/cli/restore_runner.php';
-        $cmd = "nohup php $script --filename=" . escapeshellarg($filename) .
+        $cmd = "php $script --filename=" . escapeshellarg($filename) .
                " --courseid=" . escapeshellarg($courseid);
 
         if (!empty($webhookapi)) {
@@ -71,7 +71,7 @@ class restore_course extends external_api {
         }
 
         // ✅ Chạy nền, log output vào stdout container
-        $cmd .= " > /proc/1/fd/1 2>&1 &";
+        $cmd .= " > /tmp/restore.log 2>&1 &";
 
         exec($cmd);
 

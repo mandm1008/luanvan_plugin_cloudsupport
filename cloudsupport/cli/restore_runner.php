@@ -111,7 +111,7 @@ $fp->extract_to_pathname($zipfilepath, $tempdir);
 $USER = get_admin();
 
 // Xác định target và course id
-$target = \backup::TARGET_EXISTING_DELETING;
+$target = \backup::TARGET_EXISTING_ADDING;
 $restorecontext = null;
 $restorecourseid = $courseid;
 
@@ -121,6 +121,7 @@ if ($courseid <= 0 || !$DB->record_exists('course', ['id' => $courseid])) {
     $restorecourseid = \restore_dbops::create_new_course('', '', 1);
 } else {
     $restorecontext = context_course::instance($courseid);
+    \restore_dbops::delete_course_content($courseid);
 }
 
 // Khởi tạo controller
