@@ -13,15 +13,29 @@ class local_cloudsupport_observer {
             return;
         }
 
+        $other = [
+            'quizid' => $quiz->id,
+            'opentime' => $quiz->timeopen,
+            'closetime' => $quiz->timeclose,
+        ];
+
+        // Thêm cloud config nếu có
+        $cloudcfg = $DB->get_record('local_cloudsupport_quizcfg', ['quizid' => $quiz->id], '*', IGNORE_MISSING);
+        if ($cloudcfg) {
+            if (!empty($cloudcfg->usecloud)) {
+                $other['usecloud'] = $cloudcfg->usecloud;
+            }
+            if (!empty($cloudcfg->cloudregion)) {
+                $other['cloudregion'] = $cloudcfg->cloudregion;
+            }
+        }
+
         if ($quiz->timeopen || $quiz->timeclose) {
             \local_cloudsupport\event\quiz_time_updated::create([
                 'objectid' => $quiz->id,
                 'context' => \context_module::instance($event->contextinstanceid),
-                'other' => [
-                    'quizid' => $quiz->id,
-                    'opentime' => $quiz->timeopen,
-                    'closetime' => $quiz->timeclose
-                ],
+                'courseid' => $event->courseid,
+                'other' => $other,
             ])->trigger();
         }
     }
@@ -42,18 +56,28 @@ class local_cloudsupport_observer {
             return;
         }
 
-        // Nếu có thời gian mở trong tương lai → trigger
-        // if ($quiz->timeopen > time()) {
-            \local_cloudsupport\event\quiz_time_updated::create([
-                'objectid' => $quiz->id,
-                'context' => \context_module::instance($event->contextinstanceid),
-                'courseid' => $event->courseid,
-                'other' => [
-                    'quizid' => $quiz->id,
-                    'opentime' => $quiz->timeopen,
-                    'closetime' => $quiz->timeclose,
-                ],
-            ])->trigger();
-        // }
+        $other = [
+            'quizid' => $quiz->id,
+            'opentime' => $quiz->timeopen,
+            'closetime' => $quiz->timeclose,
+        ];
+
+        // Thêm cloud config nếu có
+        $cloudcfg = $DB->get_record('local_cloudsupport_quizcfg', ['quizid' => $quiz->id], '*', IGNORE_MISSING);
+        if ($cloudcfg) {
+            if (!empty($cloudcfg->usecloud)) {
+                $other['usecloud'] = $cloudcfg->usecloud;
+            }
+            if (!empty($cloudcfg->cloudregion)) {
+                $other['cloudregion'] = $cloudcfg->cloudregion;
+            }
+        }
+
+        \local_cloudsupport\event\quiz_time_updated::create([
+            'objectid' => $quiz->id,
+            'context' => \context_module::instance($event->contextinstanceid),
+            'courseid' => $event->courseid,
+            'other' => $other,
+        ])->trigger();
     }
 }

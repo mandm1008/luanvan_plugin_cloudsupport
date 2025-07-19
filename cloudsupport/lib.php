@@ -18,3 +18,16 @@ function local_cloudsupport_pluginfile($course, $cm, $context, $filearea, $args,
     // Cho phép tải file, kể cả khách không đăng nhập
     send_stored_file($file, 0, 0, $forcedownload, $options);
 }
+
+function local_cloudsupport_extend_settings_navigation(settings_navigation $nav, context $context) {
+    global $PAGE;
+
+    if ($PAGE->cm && $PAGE->cm->modname === 'quiz') {
+        $quiznode = $nav->find('modulesettings', navigation_node::TYPE_SETTING);
+        if ($quiznode) {
+            $url = new moodle_url('/local/cloudsupport/quizcloud.php', ['cmid' => $PAGE->cm->id]);
+            $quiznode->add('Cloud Setting', $url, navigation_node::TYPE_SETTING, null, 'cloudsupporttab');
+        }
+    }
+}
+
