@@ -8,6 +8,6 @@ $plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = '1.0 for Moodle 5.0';
 
 $plugin->dependencies = [
-    'local_webhook' => ANY_VERSION,
+    'local_webhooks' => ANY_VERSION,
     'tool_objectfs' => ANY_VERSION,
 ];
