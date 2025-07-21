@@ -5,14 +5,8 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Plugin install function for local_cloudsupport.
  */
-function xmldb_local_cloudsupport_install() {
-    global $DB;
+function xmldb_local_cloudsupport_install(): void {
+    require_once(__DIR__ . '/../locallib.php');
 
-    // add cloud exams to menu
-    $current = get_config('core', 'custommenuitems');
-    $newline = 'Cloud Exams | https://control.elsystem.dominhman.id.vn';
-    if (strpos($current, $newline) === false) {
-        $updated = trim($current . "\n" . $newline);
-        set_config('custommenuitems', $updated);
-    }
+    local_cloudsupport_update_custommenu_for_cloud();
 }
