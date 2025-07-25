@@ -8,3 +8,4 @@ $string['usecloud'] = 'Use Cloud Execution';
 $string['usecloud_help'] = 'Enable this setting to run this quiz via a cloud-based service instead of locally.';
 $string['cloudsupporttab'] = 'Cloud Settings';
 $string['cloudregion'] = "Cloud Region";
+$string['task:cleanlegacydata'] = "Cleaning data task";

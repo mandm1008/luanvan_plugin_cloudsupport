@@ -30,4 +30,3 @@ function local_cloudsupport_extend_settings_navigation(settings_navigation $nav,
         }
     }
 }
-
