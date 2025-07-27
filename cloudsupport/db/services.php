@@ -49,7 +49,17 @@ $functions = [
         'ajax'        => true,
         'capabilities'=> 'moodle/restore:uploadfile',
     ],
+
+    'local_cloudsupport_update_courses' => [
+        'classname'   => 'core_course_external',
+        'methodname'  => 'update_courses',
+        'classpath'   => 'course/externallib.php',
+        'description' => 'Update courses',
+        'type'        => 'write',
+        'capabilities' => 'moodle/course:update',
+    ],
 ];
+
 $services = [
     'Cloud Support Service' => [
         'functions' => [
@@ -57,7 +67,8 @@ $services = [
             'local_cloudsupport_export_course', 
             'local_cloudsupport_export_users',
             'local_cloudsupport_import_users',
-            'local_cloudsupport_upload_backup_file'
+            'local_cloudsupport_upload_backup_file',
+            'local_cloudsupport_update_courses',
         ],
         'restrictedusers' => 0,
         'enabled' => 1,
