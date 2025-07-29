@@ -42,6 +42,7 @@ if ($url) {
     echo "🔧 No URL provided. Will derive from \$CFG->wwwroot\n";
 }
 
+menu_config::set_redirect_menu_item();
 menu_config::update_custommenu_for_cloud($url);
 
 echo "✅ Custom menu updated successfully.\n";

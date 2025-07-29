@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/cloudsupport/db" VERSION="2025071911" COMMENT="Cloud options config for quizzes"
+<XMLDB PATH="local/cloudsupport/db" VERSION="2025072910" COMMENT="Cloud options config for quizzes"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="../../lib/xmldb/xmldb.xsd">
 
   <TABLES>
+
     <TABLE NAME="local_cloudsupport_quizcfg" COMMENT="Cloud settings per quiz">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
@@ -18,5 +19,20 @@
         <KEY NAME="quizfk" TYPE="foreign" FIELDS="quizid" REFTABLE="quiz" REFFIELDS="id" />
       </KEYS>
     </TABLE>
+
+    <TABLE NAME="local_cloudsupport_settings" COMMENT="Global settings for local_cloudsupport">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true" />
+        <FIELD NAME="value" TYPE="text" NOTNULL="false" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+        <KEY NAME="unique_name" TYPE="unique" FIELDS="name" />
+      </KEYS>
+    </TABLE>
+
   </TABLES>
 </XMLDB>
