@@ -35,7 +35,7 @@ class export_course extends external_api {
         // ✅ Nếu có webhook, gọi CLI runner (chạy nền)
         if (!empty($webhookapi)) {
             $script = $CFG->dirroot . '/local/cloudsupport/cli/backup_runner.php';
-            $cmd = "php $script --courseid=" . escapeshellarg($courseid);
+            $cmd = "nohup php $script --courseid=" . escapeshellarg($courseid);
 
             if (!empty($webhookapi)) {
                 $cmd .= " --webhook-api=" . escapeshellarg($webhookapi);
